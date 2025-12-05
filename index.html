@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youmio Season 1 - Check Access</title>
+  <meta name="description" content="Check if you have access to Youmio Season 1">
+  <meta property="og:title" content="Youmio Season 1 - Check Your Access">
+  <meta property="og:description" content="Season 1 is invite-only. Check if your wallet has day one access.">
+  <meta property="og:image" content="https://youmioinvite.netlify.app/twitter-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: #0a0a0f; 
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 20px; 
+      flex-direction: column; 
+    }
+    
+    .glow { position: fixed; width: 300px; height: 300px; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+    .glow-1 { top: 20%; left: 20%; background: rgba(236,72,153,0.15); }
+    .glow-2 { bottom: 20%; right: 20%; background: rgba(168,85,247,0.15); }
+    
+    .page-container { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
+    
+    .logo-header { text-align: center; margin-bottom: 24px; }
+    .logo-img { height: 120px; width: auto; filter: drop-shadow(0 4px 20px rgba(196, 165, 217, 0.3)); }
+    
+    .season-text { 
+      font-size: 26px; 
+      font-weight: 600; 
+      background: linear-gradient(135deg, #c084fc 0%, #ec4899 50%, #f97316 100%); 
+      -webkit-background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+      background-clip: text; 
+      letter-spacing: 0.05em; 
+      text-align: center; 
+      margin-top: 24px; 
+    }
+    
+    .card { 
+      position: relative; 
+      z-index: 1; 
+      width: 100%; 
+      max-width: 480px; 
+      background: rgba(22,22,31,0.95); 
+      border: 1px solid rgba(255,255,255,0.1); 
+      border-radius: 16px; 
+      padding: 32px; 
+    }
+    
+    .card-title {
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .card-description {
+      color: #9ca3af;
+      font-size: 14px;
+      line-height: 1.7;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    .label { 
+      display: block; 
+      color: #9ca3af; 
+      font-size: 13px; 
+      margin-bottom: 8px; 
+    }
+    
+    .input { 
+      width: 100%; 
+      background: rgba(255,255,255,0.05); 
+      border: 1px solid rgba(255,255,255,0.1); 
+      border-radius: 10px; 
+      padding: 14px 16px; 
+      color: white; 
+      font-size: 14px; 
+      font-family: monospace; 
+      outline: none; 
+    }
+    .input:focus { border-color: rgba(236,72,153,0.5); }
+    .input::placeholder { color: #6b7280; }
+    
+    .btn { 
+      width: 100%; 
+      padding: 14px; 
+      background: linear-gradient(to right, #ec4899, #db2777); 
+      border: none; 
+      color: white; 
+      font-weight: 600; 
+      font-size: 15px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 8px; 
+    }
+    .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    
+    .spinner { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Result boxes */
+    .result-box {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      display: none;
+    }
+    .result-box.show { display: block; }
+    
+    .result-box.success {
+      background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.1));
+      border: 1px solid rgba(34,197,94,0.3);
+    }
+    .result-box.error {
+      background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(236,72,153,0.1));
+      border: 1px solid rgba(168,85,247,0.2);
+    }
+    
+    .result-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+    
+    .result-title {
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .result-text {
+      color: #9ca3af;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .result-box.success .result-title { color: #4ade80; }
+    .result-box.error .result-title { color: #f9a8d4; }
+    
+    .wallet-display {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      word-break: break-all;
+    }
+    
+    .check-another {
+      margin-top: 16px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #9ca3af;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .check-another:hover {
+      background: rgba(255,255,255,0.05);
+      color: white;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 24px 20px; }
+      .card-description { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="page-container">
+    <div class="logo-header">
+      <img src="/youmio-logo.png" alt="Youmio" class="logo-img" onerror="this.src='/logo.png';">
+    </div>
+
+    <div class="card">
+      <!-- Check Form -->
+      <div id="check-form">
+        <h1 class="card-title">Check Your Season 1 Access</h1>
+        <p class="card-description">
+          With Youmio Season 1 about to begin and the rewards being activated, we are preparing the app to onboard those with access. Season 1 is invite-only and you can check if you will have day one access by entering your address below.
+        </p>
+        
+        <div class="input-group">
+          <label class="label">Your Wallet Address</label>
+          <input type="text" id="wallet-input" class="input" placeholder="0x...">
+        </div>
+        
+        <button class="btn" id="check-btn">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Check This Address
+        </button>
+      </div>
+
+      <!-- Success Result -->
+      <div id="result-success" class="result-box success">
+        <div class="result-icon">🎉</div>
+        <div class="result-title">You Have Access!</div>
+        <p class="result-text">
+          Congratulations! This wallet will have access to Youmio Season 1 when it launches soon.
+        </p>
+        <div class="wallet-display" id="success-wallet"></div>
+        <button class="check-another" onclick="resetForm()">Check Another Address</button>
+      </div>
+
+      <!-- Not Found Result -->
+      <div id="result-not-found" class="result-box error">
+        <div class="result-icon">🔒</div>
+        <div class="result-title">No Access Yet</div>
+        <p class="result-text">
+          Sorry, this address does not currently have access. But don't worry — someone with access will be able to invite you once Season 1 begins!
+        </p>
+        <div class="wallet-display" id="notfound-wallet"></div>
+        <button class="check-another" onclick="resetForm()">Check Another Address</button>
+      </div>
+    </div>
+
+    <div class="season-text">Season 1 is coming soon</div>
+  </div>
+
+  <script>
+    const checkBtn = document.getElementById('check-btn');
+    const walletInput = document.getElementById('wallet-input');
+    const checkForm = document.getElementById('check-form');
+    const resultSuccess = document.getElementById('result-success');
+    const resultNotFound = document.getElementById('result-not-found');
+
+    checkBtn.addEventListener('click', checkAccess);
+    walletInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') checkAccess();
+    });
+
+    async function checkAccess() {
+      const wallet = walletInput.value.trim();
+      
+      if (!wallet) {
+        alert('Please enter a wallet address');
+        return;
+      }
+      
+      if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+        alert('Please enter a valid Ethereum wallet address');
+        return;
+      }
+
+      checkBtn.disabled = true;
+      checkBtn.innerHTML = '<span class="spinner">⏳</span> Checking...';
+
+      try {
+        const response = await fetch('/.netlify/functions/check-access?wallet=' + wallet);
+        const data = await response.json();
+
+        checkForm.style.display = 'none';
+        
+        if (data.hasAccess) {
+          document.getElementById('success-wallet').textContent = wallet;
+          resultSuccess.classList.add('show');
+        } else {
+          document.getElementById('notfound-wallet').textContent = wallet;
+          resultNotFound.classList.add('show');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Something went wrong. Please try again.');
+      }
+
+      checkBtn.disabled = false;
+      checkBtn.innerHTML = '<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> Check This Address';
+    }
+
+    function resetForm() {
+      checkForm.style.display = 'block';
+      resultSuccess.classList.remove('show');
+      resultNotFound.classList.remove('show');
+      walletInput.value = '';
+      walletInput.focus();
+    }
+  </script>
+</body>
+</html>
