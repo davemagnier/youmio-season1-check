@@ -132,10 +132,113 @@
     .result-box.success {
       background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.1));
       border: 1px solid rgba(34,197,94,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Sparkle animations */
+    .sparkle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: white;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      box-shadow: 0 0 6px 2px rgba(255,255,255,0.8), 0 0 12px 4px rgba(74,222,128,0.5);
+    }
+    
+    .result-box.success.show .sparkle {
+      animation: sparkle-float 1.5s ease-out forwards;
+    }
+    
+    .sparkle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+    .sparkle:nth-child(2) { left: 85%; top: 15%; animation-delay: 0.1s; }
+    .sparkle:nth-child(3) { left: 20%; top: 70%; animation-delay: 0.2s; }
+    .sparkle:nth-child(4) { left: 90%; top: 65%; animation-delay: 0.15s; }
+    .sparkle:nth-child(5) { left: 50%; top: 10%; animation-delay: 0.25s; }
+    .sparkle:nth-child(6) { left: 5%; top: 45%; animation-delay: 0.05s; }
+    .sparkle:nth-child(7) { left: 95%; top: 40%; animation-delay: 0.3s; }
+    .sparkle:nth-child(8) { left: 30%; top: 85%; animation-delay: 0.12s; }
+    .sparkle:nth-child(9) { left: 70%; top: 80%; animation-delay: 0.22s; }
+    .sparkle:nth-child(10) { left: 45%; top: 5%; animation-delay: 0.08s; }
+    .sparkle:nth-child(11) { left: 15%; top: 90%; animation-delay: 0.18s; }
+    .sparkle:nth-child(12) { left: 80%; top: 90%; animation-delay: 0.28s; }
+    
+    @keyframes sparkle-float {
+      0% {
+        opacity: 0;
+        transform: scale(0) translateY(0);
+      }
+      20% {
+        opacity: 1;
+        transform: scale(1.2) translateY(-5px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(0.8) translateY(-15px);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0) translateY(-30px);
+      }
+    }
+    
+    /* Success icon pulse */
+    .result-box.success.show .result-icon {
+      animation: icon-celebrate 0.6s ease-out;
+    }
+    
+    @keyframes icon-celebrate {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.3); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Shimmer sweep */
+    .result-box.success::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      pointer-events: none;
+    }
+    
+    .result-box.success.show::before {
+      animation: shimmer-sweep 1s ease-out 0.3s;
+    }
+    
+    @keyframes shimmer-sweep {
+      0% { left: -100%; }
+      100% { left: 100%; }
     }
     .result-box.error {
       background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(236,72,153,0.1));
       border: 1px solid rgba(168,85,247,0.2);
+    }
+    
+    .result-box.error.show {
+      animation: shake 0.5s ease-out;
+    }
+    
+    .result-box.error.show .result-icon {
+      animation: icon-sad 0.6s ease-out;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+      20%, 40%, 60%, 80% { transform: translateX(6px); }
+    }
+    
+    @keyframes icon-sad {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
     }
     
     .result-icon {
@@ -224,7 +327,19 @@
 
       <!-- Success Result -->
       <div id="result-success" class="result-box success">
-        <div class="result-icon">🎉</div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="result-icon">✅</div>
         <div class="result-title">You Have Access!</div>
         <p class="result-text">
           Congratulations! This wallet will have access to Youmio Season 1 when it launches soon.
