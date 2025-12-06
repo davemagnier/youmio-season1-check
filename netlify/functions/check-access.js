@@ -1,6 +1,5 @@
 // ============================================
-// CHECK ACCESS - Checks if wallet is on Season 1 allowlist
-// File: netlify/functions/check-access.js
+// CHECK ACCESS - With caching to avoid rate limits
 // ============================================
 
 const crypto = require('crypto');
@@ -16,41 +15,21 @@ try {
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 
-// Simple rate limiting
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 30; // 30 requests per minute
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
-  if (!record || now - record.timestamp > RATE_LIMIT_WINDOW) {
-    rateLimitMap.set(ip, { timestamp: now, count: 1 });
-    return false;
-  }
-  record.count++;
-  return record.count > RATE_LIMIT_MAX;
-}
+// In-memory cache
+let walletCache = {
+  wallets: new Set(),
+  lastFetch: 0,
+  ttl: 5 * 60 * 1000 // 5 minutes
+};
 
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
     'Content-Type': 'application/json'
   };
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
-  }
-
-  // Rate limiting
-  const clientIP = event.headers['x-forwarded-for'] || 'unknown';
-  if (isRateLimited(clientIP)) {
-    return { 
-      statusCode: 429, 
-      headers, 
-      body: JSON.stringify({ error: 'Too many requests. Please wait a minute.' }) 
-    };
   }
 
   if (event.httpMethod !== 'GET') {
@@ -68,24 +47,16 @@ exports.handler = async (event) => {
   }
 
   try {
-    const accessToken = await getGoogleToken();
-    
-    // Check AccessList tab - Column A contains wallet addresses
-    const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/AccessList!A:A`;
-    const response = await fetch(sheetUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to read sheet');
+    // Check if cache is still valid
+    const now = Date.now();
+    if (walletCache.wallets.size === 0 || (now - walletCache.lastFetch) > walletCache.ttl) {
+      // Fetch fresh data from Google Sheets
+      await refreshCache();
     }
 
-    const data = await response.json();
-    const rows = data.values || [];
-
-    // Check if wallet exists in the list (case-insensitive)
+    // Check if wallet exists in cached set (case-insensitive)
     const walletLower = wallet.toLowerCase();
-    const hasAccess = rows.some(row => row[0] && row[0].toLowerCase() === walletLower);
+    const hasAccess = walletCache.wallets.has(walletLower);
 
     return {
       statusCode: 200,
@@ -95,13 +66,59 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error('Error:', error);
+    
+    // If we have cached data and API fails, use stale cache
+    if (walletCache.wallets.size > 0) {
+      const walletLower = wallet.toLowerCase();
+      const hasAccess = walletCache.wallets.has(walletLower);
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ hasAccess, cached: true })
+      };
+    }
+    
     return { 
       statusCode: 500, 
       headers, 
-      body: JSON.stringify({ error: 'Server error', hasAccess: false }) 
+      body: JSON.stringify({ error: 'Server error - please try again', hasAccess: false }) 
     };
   }
 };
+
+async function refreshCache() {
+  console.log('Refreshing wallet cache from Google Sheets...');
+  
+  const accessToken = await getGoogleToken();
+  
+  // Fetch AccessList tab - Column A contains wallet addresses
+  const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/AccessList!A:A`;
+  const response = await fetch(sheetUrl, {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Sheet API error:', response.status, errorText);
+    throw new Error('Failed to read sheet');
+  }
+
+  const data = await response.json();
+  const rows = data.values || [];
+
+  // Build a Set for O(1) lookups (skip header row if present)
+  const newWallets = new Set();
+  for (const row of rows) {
+    if (row[0] && row[0].startsWith('0x')) {
+      newWallets.add(row[0].toLowerCase());
+    }
+  }
+
+  walletCache.wallets = newWallets;
+  walletCache.lastFetch = Date.now();
+  
+  console.log(`Cache refreshed: ${newWallets.size} wallets loaded`);
+}
 
 async function getGoogleToken() {
   const now = Math.floor(Date.now() / 1000);
